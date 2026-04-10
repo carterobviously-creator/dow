@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>CRUSH THE SIGNAL - INSANE DnB</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050510;color:#0ff;font-family:'Courier New',monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
+h1{font-size:32px;margin-bottom:6px;text-shadow:0 0 30px #0ff,0 0 60px #08f;letter-spacing:3px}
+.sub{color:#0f9;font-size:13px;margin-bottom:6px}.sub2{color:#f0a;font-size:11px;margin-bottom:25px}
+#btn{background:linear-gradient(135deg,#0ff,#08f);color:#050510;border:none;padding:20px 55px;font-size:22px;font-family:inherit;font-weight:bold;cursor:pointer;border-radius:8px;transition:all .3s;text-transform:uppercase}
+#btn:hover{background:linear-gradient(135deg,#0f0,#0ff);box-shadow:0 0 40px #0f0;transform:scale(1.05)}
+#btn:disabled{background:#222;color:#555;cursor:wait;transform:none;box-shadow:none}
+#status{margin-top:18px;font-size:13px;color:#0f9;min-height:18px}
+#bar{width:400px;height:6px;background:#111;border-radius:3px;margin-top:10px;overflow:hidden;display:none}
+#fill{width:0%;height:100%;background:linear-gradient(90deg,#0ff,#f0a);transition:width .3s}
+#player{margin-top:18px;display:none}audio{width:420px;filter:hue-rotate(180deg)}
+.info{margin-top:20px;font-size:10px;color:#456;max-width:500px;text-align:center;line-height:1.6}
+</style></head><body>
+<h1>⚡ CRUSH THE SIGNAL ⚡</h1>
+<div class="sub">174 BPM · Dark DnB · 3:00 · 44.1kHz WAV</div>
+<div class="sub2">▸ INTRO ▸ BUILD ▸ DROP 1 ▸ BREAKDOWN ▸ BUILD 2 ▸ DROP 2 (INSANE) ▸ OUTRO</div>
+<button id="btn" onclick="generate()">🔊 Generate & Download WAV</button>
+<div id="status"></div>
+<div id="bar"><div id="fill"></div></div>
+<div id="player"><audio id="aud" controls></audio></div>
+<div class="info">100% browser-synthesized · No internet needed · ~15MB WAV output</div>
+<script>
+const SR=44100,BPM=174,BEAT=60/BPM,DUR=180;
+function st(t){document.getElementById('status').textContent=t}
+function prog(p){document.getElementById('fill').style.width=p+'%'}
+function bf(d,fc,hp){
+const rc=1/(2*Math.PI*fc),dt=1/SR,a=hp?rc/(rc+dt):dt/(rc+dt);
+let o=new Float32Array(d.length);o[0]=d[0];
+for(let i=1;i<d.length;i++)o[i]=hp?a*(o[i-1]+d[i]-d[i-1]):o[i-1]+a*(d[i]-o[i-1]);
+let o2=new Float32Array(d.length);o2[0]=o[0];
+for(let i=1;i<d.length;i++)o2[i]=hp?a*(o2[i-1]+o[i]-o[i-1]):o2[i-1]+a*(o[i]-o2[i-1]);
+return o2}
+function ev(n,at=.005,de=.05,su=.3,re=.1){
+let e=new Float32Array(n),ai=Math.floor(at*SR),di=Math.floor(de*SR),ri=Math.floor(re*SR);
+for(let i=0;i<n;i++)e[i]=su;
+for(let i=0;i<Math.min(ai,n);i++)e[i]=i/ai;
+for(let i=ai;i<Math.min(ai+di,n);i++)e[i]=1-(1-su)*((i-ai)/di);
+if(ri>0&&n>ri)for(let i=n-ri;i<n;i++)e[i]*=(n-i)/ri;
+return e}
+function saw(p){return(p%(2*Math.PI))/Math.PI-1}
+function kick(){
+const L=.22,n=Math.floor(L*SR),s=new Float32Array(n);let ph=0;
+for(let i=0;i<n;i++){const t=i/SR;ph+=2*Math.PI*(180*Math.exp(-t*25)+42)/SR;
+s[i]=(Math.sin(ph)*.95+Math.sin(2*Math.PI*4500*t)*Math.exp(-t*200)*.3+Math.sin(2*Math.PI*42*t)*Math.exp(-t*4)*.5)*Math.exp(-t*7)*.9}
+return s}
+function hardkick(){
+const L=.25,n=Math.floor(L*SR),s=new Float32Array(n);let ph=0;
+for(let i=0;i<n;i++){const t=i/SR;ph+=2*Math.PI*(250*Math.exp(-t*20)+38)/SR;
+const b=Math.sin(ph)*2.5;s[i]=(Math.tanh(b)*.8+Math.sin(2*Math.PI*38*t)*Math.exp(-t*3)*.6+Math.sin(2*Math.PI*6000*t)*Math.exp(-t*300)*.4)*Math.exp(-t*6)*.95}
+return s}
+function snare(){
+const L=.2,n=Math.floor(L*SR),s=new Float32Array(n);
+for(let i=0;i<n;i++){const t=i/SR;
+s[i]=(Math.sin(2*Math.PI*210*t)*Math.exp(-t*35)*.35+(Math.random()*2-1)*Math.exp(-t*12)*.55+(Math.random()*2-1)*Math.exp(-t*50)*.35)*Math.exp(-t*8)*.8}
+return bf(s,9000,false)}
+function crashsnare(){
+const L=.35,n=Math.floor(L*SR),s=new Float32Array(n);
+for(let i=0;i<n;i++){const t=i/SR;
+s[i]=(Math.sin(2*Math.PI*180*t)*Math.exp(-t*25)*.4+(Math.random()*2-1)*Math.exp(-t*6)*.6+(Math.random()*2-1)*Math.exp(-t*30)*.4)*Math.exp(-t*5)*.9}
+return bf(s,10000,false)}
+function hh(L,op){
+L=L||.04;const n=Math.floor(L*SR),s=new Float32Array(n),dc=op?5:40;
+for(let i=0;i<n;i++)s[i]=(Math.random()*2-1)*Math.exp(-i/SR*dc)*.28;
+return bf(s,10000,true)}
+function ride(){
+const L=.15,n=Math.floor(L*SR),s=new Float32Array(n);
+for(let i=0;i<n;i++){const t=i/SR;s[i]=((Math.random()*2-1)*.6+Math.sin(2*Math.PI*6500*t)*.15)*Math.exp(-t*7)*.18}
+return bf(s,9000,true)}
+function crash(){
+const L=1.5,n=Math.floor(L*SR),s=new Float32Array(n);
+for(let i=0;i<n;i++)s[i]=(Math.random()*2-1)*Math.exp(-i/SR*2)*.35;
+return bf(s,7000,true)}
+function reese(freq,L){
+L=L||.25;const n=Math.floor(L*SR),s=new Float32Array(n),det=[.99,.995,1,1.005,1.01];
+for(let i=0;i<n;i++){const t=i/SR;let v=0;
+for(const d of det)v+=saw(2*Math.PI*freq*d*t);v/=det.length;
+const fc=900+700*Math.sin(2*Math.PI*.4*t),mx=Math.min(fc/SR,1);
+if(i>0)s[i]=s[i-1]+mx*(v*.5-s[i-1]);else s[i]=v*.5;
+s[i]=Math.tanh(s[i]*1.5)*.45+Math.sin(2*Math.PI*freq*t)*.45;
+const e=ev(n,.005,.03,.8,.03);s[i]*=e[i]*.6}
+return s}
+function wobble(freq,L,rate){
+L=L||.25;rate=rate||4;const n=Math.floor(L*SR),s=new Float32Array(n),det=[.995,1,1.005];
+for(let i=0;i<n;i++){const t=i/SR;let v=0;
+for(const d of det)v+=saw(2*Math.PI*freq*d*t);v/=det.length;
+const fc=400+1200*(.5+.5*Math.sin(2*Math.PI*rate*t)),mx=Math.min(fc/SR,1);
+if(i>0)s[i]=s[i-1]+mx*(v*.5-s[i-1]);else s[i]=v*.5;
+s[i]=Math.tanh(s[i]*2)*.5+Math.sin(2*Math.PI*freq*t)*.4;
+const e=ev(n,.003,.02,.85,.02);s[i]*=e[i]*.65}
+return s}
+function pad(freqs,L){
+L=L||4;const n=Math.floor(L*SR),s=new Float32Array(n);
+for(let i=0;i<n;i++){const t=i/SR;let v=0;
+for(const f of freqs)for(const d of[-7,-3,0,3,7])v+=saw(2*Math.PI*f*Math.pow(2,d/1200)*t);
+v/=(freqs.length*5);const fc=1800+600*Math.sin(2*Math.PI*.12*t),mx=Math.min(fc/SR,1);
+if(i>0)s[i]=s[i-1]+mx*(v-s[i-1]);else s[i]=v;
+const e=ev(n,.8,.5,.3,1.5);s[i]*=e[i]*.15}
+return s}
+function stab(freq,L){
+L=L||.08;const n=Math.floor(L*SR),s=new Float32Array(n);
+for(let i=0;i<n;i++){const t=i/SR;
+s[i]=(Math.sin(2*Math.PI*freq*t)+Math.sin(2*Math.PI*freq*2*t)*.5+Math.sin(2*Math.PI*freq*3*t)*.3+Math.sin(2*Math.PI*freq*4*t)*.15)*Math.exp(-t*18)*.4}
+return bf(s,4000,false)}
+function riser(L){
+L=L||4;const n=Math.floor(L*SR),s=new Float32Array(n);
+for(let i=0;i<n;i++){const t=i/SR,f=200+7800*(t/L);
+s[i]=((Math.random()*2-1)*(t/L)*.3+Math.sin(2*Math.PI*f*t)*Math.pow(t/L,2)*.25)}
+return bf(s,12000,true)}
+function subdrop(){
+const L=1,n=Math.floor(L*SR),s=new Float32Array(n);let ph=0;
+for(let i=0;i<n;i++){const t=i/SR;ph+=2*Math.PI*(120*Math.exp(-t*3)+30)/SR;
+s[i]=Math.sin(ph)*Math.exp(-t*2)*.7}return s}
+function impact(){
+const L=.5,n=Math.floor(L*SR),s=new Float32Array(n);
+for(let i=0;i<n;i++){const t=i/SR;
+s[i]=((Math.random()*2-1)*Math.exp(-t*8)*.5+Math.sin(2*Math.PI*50*t)*Math.exp(-t*4)*.6)*.7}
+return bf(s,2000,false)}
+function snareroll(beats){
+const nn=Math.floor(beats*4),ss=Math.floor(BEAT/4*SR),out=new Float32Array(nn*ss),sn=snare();
+for(let i=0;i<nn;i++){const v=.4+.6*(i/nn),p=i*ss,e=Math.min(p+sn.length,out.length);
+for(let j=p;j<e;j++)out[j]+=sn[j-p]*v}return out}
+function pl(tk,snd,pos){
+const e=Math.min(pos+snd.length,tk.length);
+if(pos>=0&&pos<tk.length)for(let i=pos;i<e;i++)tk[i]+=snd[i-pos]}
+function plv(tk,snd,pos,vol){
+const e=Math.min(pos+snd.length,tk.length);
+if(pos>=0&&pos<tk.length)for(let i=pos;i<e;i++)tk[i]+=snd[i-pos]*vol}
+function encWAV(samples){
+const len=samples.length,buf=new ArrayBuffer(44+len*2),v=new DataView(buf);
+function ws(o,s){for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))}
+ws(0,'RIFF');v.setUint32(4,36+len*2,true);ws(8,'WAVE');
+ws(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);
+v.setUint16(22,1,true);v.setUint32(24,SR,true);v.setUint32(28,SR*2,true);
+v.setUint16(32,2,true);v.setUint16(34,16,true);
+ws(36,'data');v.setUint32(40,len*2,true);
+for(let i=0;i<len;i++){let s=Math.max(-1,Math.min(1,samples[i]));
+v.setInt16(44+i*2,s<0?s*0x8000:s*0x7FFF,true)}
+return new Blob([buf],{type:'audio/wav'})}
+
+async function generate(){
+const btn=document.getElementById('btn');
+btn.disabled=true;btn.textContent='⏳ SYNTHESIZING...';
+document.getElementById('bar').style.display='block';
+await new Promise(r=>setTimeout(r,50));
+
+st('Synthesizing instruments...');prog(5);
+await new Promise(r=>setTimeout(r,30));
+const kS=kick(),hkS=hardkick(),snS=snare(),csS=crashsnare();
+const hhS=hh(.03,false),ohS=hh(.08,true),rdS=ride(),crS=crash();
+const risS=riser(4*BEAT*4),sdS=subdrop(),impS=impact();
+prog(15);
+
+st('Building 130-bar arrangement...');
+await new Promise(r=>setTimeout(r,30));
+const total=Math.floor(DUR*SR),tk=new Float32Array(total);
+const step=BEAT/4,barL=Math.floor(4*BEAT*SR),nBars=Math.floor(DUR/(4*BEAT));
+
+const K1=[1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0];
+const K2=[1,0,0,1,0,0,1,0,0,0,1,0,1,0,0,0];
+const K3=[1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0];
+const SN1=[0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0];
+const SN2=[0,0,0,0,1,0,0,1,0,0,0,0,1,0,1,0];
+const HH1=[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0];
+const HH2=[1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1];
+const OH=[0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1];
+const RD=[0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,0];
+const B1=[55,0,55,65.41,0,55,0,73.42],B2=[55,55,0,82.41,0,65.41,55,0];
+const B3=[41.2,0,41.2,55,0,41.2,0,49],B4=[36.71,0,36.71,55,0,49,36.71,0];
+const P1=[220,261.63,329.63],P2=[174.61,220,261.63],P3=[261.63,329.63,392],P4=[196,246.94,293.66],P5=[164.81,207.65,261.63];
+const ST1=[440,554.37,659.26],ST2=[349.23,440,523.25];
+
+for(let b=0;b<nBars;b++){
+const bp=b*barL;
+if(b%13===0){prog(15+Math.floor(b/nBars*60));
+st('Building bar '+b+'/'+nBars+'...');
+await new Promise(r=>setTimeout(r,10))}
+
+// INTRO 0-7
+if(b<8){
+for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);if(HH1[s])plv(tk,hhS,sp,.5)}
+if(b%2===0){const pc=[P1,P2,P3,P4][b/2%4];pl(tk,pad(pc,4*BEAT*2),bp)}
+if(b===4)plv(tk,risS,bp,.6)}
+
+// BUILD 8-15
+else if(b<16){
+const vol=(b-8)/8;
+for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
+if(HH2[s])plv(tk,hhS,sp,.4+vol*.4);if(OH[s])plv(tk,ohS,sp,vol);if(K1[s])plv(tk,kS,sp,vol*.8)}
+if(b>=12){const bl=B1;for(let i=0;i<bl.length;i++)if(bl[i]>0)plv(tk,reese(bl[i],BEAT*.4),bp+Math.floor(i*BEAT*.5*SR),vol*.5)}
+if(b%2===0){const pc=[P1,P2,P3,P4][Math.floor(b/2)%4];plv(tk,pad(pc,4*BEAT*1.5),bp,.8)}
+if(b===14)plv(tk,snareroll(8),bp,.7);
+if(b===12)plv(tk,risS,bp,.8)}
+
+// DROP 1: 16-31
+else if(b<32){
+if(b===16){pl(tk,impS,bp);pl(tk,sdS,bp);pl(tk,crS,bp)}
+for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
+const kp=b%4>=2?K2:K1;if(kp[s])pl(tk,kS,sp);
+const sn=b%4>=2?SN2:SN1;if(sn[s])pl(tk,snS,sp);
+if(HH2[s])pl(tk,hhS,sp);if(OH[s])pl(tk,ohS,sp);
+if(RD[s]&&b%2===1)pl(tk,rdS,sp)}
+const bl=[B1,B2,B3,B2][b%4];
+for(let i=0;i<bl.length;i++)if(bl[i]>0)pl(tk,reese(bl[i],BEAT*.45),bp+Math.floor(i*BEAT*.5*SR));
+if(b%4===0){const pc=[P1,P2,P3,P4][Math.floor(b/4)%4];plv(tk,pad(pc,4*BEAT*2),bp,.4)}
+if(b%2===0)for(const f of ST1)pl(tk,stab(f,.06),bp);
+if(b%4===0)plv(tk,crS,bp,.5)}
+
+// BREAKDOWN 32-39
+else if(b<40){
+for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);if(HH1[s])plv(tk,hhS,sp,.3)}
+if(b%2===0){const pc=[P1,P5,P2,P4][Math.floor(b/2)%4];plv(tk,pad(pc,4*BEAT*2),bp,1.2)}
+if(b>=36){const vol=(b-36)/4,bl=B4;
+for(let i=0;i<bl.length;i+=2)if(bl[i]>0)plv(tk,reese(bl[i],BEAT*.8),bp+Math.floor(i*BEAT*.5*SR),vol*.4)}
+if(b===36)plv(tk,risS,bp,.9)}
+
+// BUILD 2: 40-47
+else if(b<48){
+const vol=(b-40)/8;
+for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
+if(HH2[s])plv(tk,hhS,sp,.3+vol*.5);if(K1[s])plv(tk,hkS,sp,vol);if(OH[s])plv(tk,ohS,sp,vol)}
+if(b%2===0){const pc=[P1,P2,P3,P4][Math.floor(b/2)%4];plv(tk,pad(pc,4*BEAT*1.5),bp,.8-vol*.3)}
+if(b>=44){const rb=(b-44+1)*2;plv(tk,snareroll(rb),bp,.5+vol*.4)}
+if(b===44)pl(tk,risS,bp)}
+
+// DROP 2 ABSOLUTE MAYHEM: 48-71
+else if(b<72){
+if(b===48){plv(tk,impS,bp,1.2);plv(tk,sdS,bp,1.3);plv(tk,crS,bp,1.2)}
+for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
+const kp=[K2,K3,K2,K1][b%4];if(kp[s])pl(tk,hkS,sp);
+const sn=b%2===0?SN2:SN1;if(sn[s])pl(tk,b%3!==0?snS:csS,sp);
+if(HH2[s])pl(tk,hhS,sp);if(OH[s])pl(tk,ohS,sp);if(RD[s])pl(tk,rdS,sp)}
+const bl=[B1,B2,B3,B4][b%4],wr=4+(b%8);
+for(let i=0;i<bl.length;i++)if(bl[i]>0)pl(tk,wobble(bl[i],BEAT*.45,wr),bp+Math.floor(i*BEAT*.5*SR));
+if(b%2===0){for(const f of ST1)plv(tk,stab(f,.08),bp,1.3);
+for(const f of ST2)plv(tk,stab(f,.05),bp+Math.floor(2*BEAT*SR),.8)}
+if(b%2===0)plv(tk,crS,bp,.4);
+if(b%8===0)plv(tk,sdS,bp,.6)}
+
+// OUTRO 72+
+else{
+const vol=Math.max(0,1-(b-72)/6);
+for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
+if(HH1[s])plv(tk,hhS,sp,vol*.5);if(b<75&&K1[s])plv(tk,kS,sp,vol*.6)}
+if(b%2===0&&b<76){const pc=[P1,P2,P3,P4][Math.floor(b/2)%4];plv(tk,pad(pc,4*BEAT*2),bp,vol)}}
+}
+
+st('Normalizing & compressing...');prog(80);
+await new Promise(r=>setTimeout(r,30));
+let mx=0;for(let i=0;i<tk.length;i++)mx=Math.max(mx,Math.abs(tk[i]));
+if(mx>0)for(let i=0;i<tk.length;i++)tk[i]=tk[i]/mx*.92;
+const thr=.6,rat=3;
+for(let i=0;i<tk.length;i++){const a=Math.abs(tk[i]);
+if(a>thr){const sg=tk[i]>0?1:-1;tk[i]=sg*(thr+(a-thr)/rat)}}
+mx=0;for(let i=0;i<tk.length;i++)mx=Math.max(mx,Math.abs(tk[i]));
+if(mx>0)for(let i=0;i<tk.length;i++)tk[i]=tk[i]/mx*.95;
+
+st('Encoding WAV...');prog(90);
+await new Promise(r=>setTimeout(r,30));
+const blob=encWAV(tk);prog(98);
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');a.href=url;a.download='Crush_the_Signal_INSANE_174bpm.wav';
+document.body.appendChild(a);a.click();document.body.removeChild(a);
+document.getElementById('aud').src=url;
+document.getElementById('player').style.display='block';
+prog(100);
+btn.disabled=false;btn.textContent='🔊 GENERATE AGAIN';
+st('✅ Crush_the_Signal_INSANE_174bpm.wav ('+(blob.size/1024/1024).toFixed(1)+' MB) — DOWNLOADED!')
+}
+</script></body></html>
