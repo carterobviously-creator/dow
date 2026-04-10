@@ -174,17 +174,15 @@ const ST1=[440,554.37,659.26],ST2=[349.23,440,523.25];
 
 for(let b=0;b<nBars;b++){
 const bp=b*barL;
-if(b%13===0){prog(15+Math.floor(b/nBars*60));
+if(b%4===0){prog(15+Math.floor(b/nBars*60));
 st('Building bar '+b+'/'+nBars+'...');
-await new Promise(r=>setTimeout(r,10))}
+await new Promise(r=>setTimeout(r,0))}
 
-// INTRO 0-7
 if(b<8){
 for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);if(HH1[s])plv(tk,hhS,sp,.5)}
 if(b%2===0){const pc=[P1,P2,P3,P4][b/2%4];pl(tk,pad(pc,4*BEAT*2),bp)}
 if(b===4)plv(tk,risS,bp,.6)}
 
-// BUILD 8-15
 else if(b<16){
 const vol=(b-8)/8;
 for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
@@ -194,7 +192,6 @@ if(b%2===0){const pc=[P1,P2,P3,P4][Math.floor(b/2)%4];plv(tk,pad(pc,4*BEAT*1.5),
 if(b===14)plv(tk,snareroll(8),bp,.7);
 if(b===12)plv(tk,risS,bp,.8)}
 
-// DROP 1: 16-31
 else if(b<32){
 if(b===16){pl(tk,impS,bp);pl(tk,sdS,bp);pl(tk,crS,bp)}
 for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
@@ -208,7 +205,6 @@ if(b%4===0){const pc=[P1,P2,P3,P4][Math.floor(b/4)%4];plv(tk,pad(pc,4*BEAT*2),bp
 if(b%2===0)for(const f of ST1)pl(tk,stab(f,.06),bp);
 if(b%4===0)plv(tk,crS,bp,.5)}
 
-// BREAKDOWN 32-39
 else if(b<40){
 for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);if(HH1[s])plv(tk,hhS,sp,.3)}
 if(b%2===0){const pc=[P1,P5,P2,P4][Math.floor(b/2)%4];plv(tk,pad(pc,4*BEAT*2),bp,1.2)}
@@ -216,7 +212,6 @@ if(b>=36){const vol=(b-36)/4,bl=B4;
 for(let i=0;i<bl.length;i+=2)if(bl[i]>0)plv(tk,reese(bl[i],BEAT*.8),bp+Math.floor(i*BEAT*.5*SR),vol*.4)}
 if(b===36)plv(tk,risS,bp,.9)}
 
-// BUILD 2: 40-47
 else if(b<48){
 const vol=(b-40)/8;
 for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
@@ -225,7 +220,6 @@ if(b%2===0){const pc=[P1,P2,P3,P4][Math.floor(b/2)%4];plv(tk,pad(pc,4*BEAT*1.5),
 if(b>=44){const rb=(b-44+1)*2;plv(tk,snareroll(rb),bp,.5+vol*.4)}
 if(b===44)pl(tk,risS,bp)}
 
-// DROP 2 ABSOLUTE MAYHEM: 48-71
 else if(b<72){
 if(b===48){plv(tk,impS,bp,1.2);plv(tk,sdS,bp,1.3);plv(tk,crS,bp,1.2)}
 for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
@@ -239,7 +233,6 @@ for(const f of ST2)plv(tk,stab(f,.05),bp+Math.floor(2*BEAT*SR),.8)}
 if(b%2===0)plv(tk,crS,bp,.4);
 if(b%8===0)plv(tk,sdS,bp,.6)}
 
-// OUTRO 72+
 else{
 const vol=Math.max(0,1-(b-72)/6);
 for(let s=0;s<16;s++){const sp=bp+Math.floor(s*step*SR);
